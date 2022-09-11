@@ -1,0 +1,169 @@
+import argparse
+import os
+import hashlib
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("root", nargs="?", default='Directory is not specified')
+argument = parser.parse_args()
+
+top = argument.root
+if top != 'Directory is not specified':
+    print('Enter to format')
+
+    format_s = input()
+
+    dict_path_size = {}
+    for root, direct, files in os.walk(top, topdown=True):
+        for file in files:
+            the_path = os.path.join(root, file)
+            the_size = os.path.getsize(the_path)
+            if format_s in the_path:
+                if the_size not in dict_path_size:
+                    dict_path_size[the_size] = [the_path]
+                else:
+                    dict_path_size[the_size].append(the_path)
+
+    print('''Size sorting options:
+1. Descending
+2. Ascending''')
+    print()
+
+    sort_size = []
+
+    def sorting_option_1():
+        for i in sorted(dict_path_size):
+            print(f'{i} bytes')
+            print(*dict_path_size[i], sep='\n')
+            print()
+
+
+    def sorting_option_2():
+        for i in list(dict_path_size.keys()):
+            sort_size.append(i)
+        sort_size.sort(reverse=True)
+        for j in sort_size:
+            print(f'{j} bytes')
+            print(*dict_path_size[j], sep='\n')
+            print()
+
+    while True:
+        print('Enter a sorting option:')
+        sorting_option = input()
+        print()
+        if sorting_option in ('1', '2'):
+            if sorting_option == '1':
+                sorting_option_2()
+            elif sorting_option == '2':
+                sorting_option_1()
+            break
+        else:
+            print('Wrong option')
+            print()
+
+    check_duplicat = input('Check for duplicates?\n')
+
+    while check_duplicat not in ['yes', 'no']:
+        print('Wrong option')
+        check_duplicat = input('Check for duplicates?\n')
+
+    hash_dict = {}
+
+    if check_duplicat == 'yes':
+        for key, value in dict_path_size.items():
+            if len(value) > 1:
+                for i in value:
+                    value_path = ''.join(i)
+                    with open(f'{value_path}', 'r', encoding='utf-8') as file1:
+                        file_line = file1.read()
+                        hash_file = hashlib.md5(''.join(file_line).encode('utf-8')).hexdigest()
+                        if hash_file not in hash_dict:
+                            hash_dict[hash_file] = [value_path]
+                        else:
+                            hash_dict[hash_file].append(value_path)
+
+
+    def keys_path_size(dict_, val):
+        for key, value in dict_.items():
+            if val in value:
+                return key
+
+    count = 1
+    final_dict = {}
+    for key, value in hash_dict.items():
+        if len(value) > 1:
+            byt = keys_path_size(dict_path_size, value[0])
+            hash_ = dict(zip([f'Hash: {key}'], [value]))
+            if byt not in final_dict:
+                final_dict[byt] = [hash_]
+            else:
+                final_dict[byt].append(hash_)
+
+    sort_size_1 = []
+    count_1 = 1
+    delete_dict = {}
+    if sorting_option == '2':
+        for k in sorted(final_dict):
+            print(f'{k} bytes')
+            for dict_q in final_dict[k]:
+                print(''.join(dict_q.keys()))
+                for i in dict_q.values():
+                    for j in i:
+                        print(f'{count_1}. {j}')
+                        delete_dict[count_1] = j
+                        count_1 += 1
+
+    elif sorting_option == '1':
+        for i in final_dict:
+            sort_size_1.append(i)
+        sort_size_1.sort(reverse=True)
+        for i in sort_size_1:
+            print(f'{i} bytes')
+            for j in final_dict[i]:
+                print(''.join(j.keys()))
+                for i_ in j.values():
+                    for s in i_:
+                        print(f'{count_1}. {s}')
+                        delete_dict[count_1] = s
+                        count_1 += 1
+
+    del_fil = input('Delete files?\n')
+    while del_fil != 'yes':
+        print('Wrong option')
+        del_fil = input()
+
+    if del_fil == 'yes':
+        while True:
+            user_del_file = input('Enter file numbers to delete:\n').split()
+            if len(user_del_file) != 0:
+                try:
+                    counter = 0
+                    bytes_result = 0
+                    for i in user_del_file:
+                        if int(i) in delete_dict:
+                            counter += 1
+                    if counter == len(user_del_file):
+                        for i in user_del_file:
+                            res = delete_dict.pop(int(i))
+                            os.remove(res)
+                            k = keys_path_size(dict_path_size, res)
+                            bytes_result += k
+                        print(f'Total freed up space: {bytes_result} bytes')
+                        break
+                    else:
+                        print('Wrong format')
+                except ValueError:
+                    print('Wrong format')
+            if len(user_del_file) == 0:
+                print('Wrong format')
+
+
+else:
+    print(top)
+
+
+
+
+
+
+
